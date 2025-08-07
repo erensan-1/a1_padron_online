@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Padrón Online</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet-svg-shape-markers.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.wms.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/Municipios_2.js"></script>
+        <script src="data/HSasignados_3.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[28.132833894076846,-16.82741752994269],[28.460198396391732,-16.12795548772952]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var title = new L.Control({'position':'topleft'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>Padrón Online</h2>';
+        };
+        title.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_OrtoExpressUrbana10125cmpixel_0');
+        map.getPane('pane_OrtoExpressUrbana10125cmpixel_0').style.zIndex = 400;
+        var layer_OrtoExpressUrbana10125cmpixel_0 = L.WMS.layer("https://idecan1.grafcan.es/ServicioWMS/OrtoUrb", "OU", {
+            pane: 'pane_OrtoExpressUrbana10125cmpixel_0',
+            format: 'image/jpeg',
+            uppercase: true,
+            transparent: true,
+            continuousWorld : true,
+            tiled: true,
+            info_format: 'text/html',
+            opacity: 1,
+            identify: false,
+            attribution: '',
+        });
+        map.addLayer(layer_OrtoExpressUrbana10125cmpixel_0);
+        map.createPane('pane_OSMStandard_1');
+        map.getPane('pane_OSMStandard_1').style.zIndex = 401;
+        var layer_OSMStandard_1 = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OSMStandard_1',
+            opacity: 1.0,
+            attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors, CC-BY-SA</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OSMStandard_1;
+        map.addLayer(layer_OSMStandard_1);
+        function pop_Municipios_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">COD_MUNI</th>\
+                        <td>' + (feature.properties['COD_MUNI'] !== null ? autolinker.link(String(feature.properties['COD_MUNI']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">NOMBRE</th>\
+                        <td>' + (feature.properties['NOMBRE'] !== null ? autolinker.link(String(feature.properties['NOMBRE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">asignaciones_qgis_n_hh</th>\
+                        <td>' + (feature.properties['asignaciones_qgis_n_hh'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_n_hh']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">asignaciones_qgis_n_hs</th>\
+                        <td>' + (feature.properties['asignaciones_qgis_n_hs'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_n_hs']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">asignaciones_qgis_n_asignados</th>\
+                        <td>' + (feature.properties['asignaciones_qgis_n_asignados'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_n_asignados']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_n_asignados_%</strong><br />' + (feature.properties['asignaciones_qgis_n_asignados_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_n_asignados_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_n_vv_asignadas_%</strong><br />' + (feature.properties['asignaciones_qgis_n_vv_asignadas_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_n_vv_asignadas_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_n_nueva_alta_%</strong><br />' + (feature.properties['asignaciones_qgis_n_nueva_alta_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_n_nueva_alta_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_match exacto _ vv_%</strong><br />' + (feature.properties['asignaciones_qgis_match exacto _ vv_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_match exacto _ vv_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_fuzzy _ vv_%</strong><br />' + (feature.properties['asignaciones_qgis_fuzzy _ vv_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_fuzzy _ vv_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_match exacto _ finca_%</strong><br />' + (feature.properties['asignaciones_qgis_match exacto _ finca_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_match exacto _ finca_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_fuzzy _ finca_%</strong><br />' + (feature.properties['asignaciones_qgis_fuzzy _ finca_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_fuzzy _ finca_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_match exacto _ codvia callejero_%</strong><br />' + (feature.properties['asignaciones_qgis_match exacto _ codvia callejero_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_match exacto _ codvia callejero_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_fuzzy _ nvia callejero_%</strong><br />' + (feature.properties['asignaciones_qgis_fuzzy _ nvia callejero_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_fuzzy _ nvia callejero_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_match exacto _ cc_%</strong><br />' + (feature.properties['asignaciones_qgis_match exacto _ cc_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_match exacto _ cc_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>asignaciones_qgis_fuzzy _ cc_%</strong><br />' + (feature.properties['asignaciones_qgis_fuzzy _ cc_%'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_fuzzy _ cc_%']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Municipios_2_0() {
+            return {
+                pane: 'pane_Municipios_2',
+                opacity: 1,
+                color: 'rgba(234,0,0,1.0)',
+                dashArray: '1.0,2.0',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Municipios_2');
+        map.getPane('pane_Municipios_2').style.zIndex = 402;
+        map.getPane('pane_Municipios_2').style['mix-blend-mode'] = 'normal';
+        var layer_Municipios_2 = new L.geoJson(json_Municipios_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Municipios_2',
+            layerName: 'layer_Municipios_2',
+            pane: 'pane_Municipios_2',
+            onEachFeature: pop_Municipios_2,
+            style: style_Municipios_2_0,
+        });
+        bounds_group.addLayer(layer_Municipios_2);
+        map.addLayer(layer_Municipios_2);
+        function pop_HSasignados_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">civ</th>\
+                        <td>' + (feature.properties['civ'] !== null ? autolinker.link(String(feature.properties['civ']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">direccion_hs</th>\
+                        <td>' + (feature.properties['direccion_hs'] !== null ? autolinker.link(String(feature.properties['direccion_hs']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">metodo-fuente</th>\
+                        <td>' + (feature.properties['metodo-fuente'] !== null ? autolinker.link(String(feature.properties['metodo-fuente']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>coor_x</strong><br />' + (feature.properties['coor_x'] !== null ? autolinker.link(String(feature.properties['coor_x']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>coor_y</strong><br />' + (feature.properties['coor_y'] !== null ? autolinker.link(String(feature.properties['coor_y']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">asignaciones_qgis_nombre</th>\
+                        <td>' + (feature.properties['asignaciones_qgis_nombre'] !== null ? autolinker.link(String(feature.properties['asignaciones_qgis_nombre']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_HSasignados_3_0(feature) {
+            switch(String(feature.properties['metodo-fuente'])) {
+                case 'fuzzy - cc':
+                    return {
+                pane: 'pane_HSasignados_3',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,0.8)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(1,255,26,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'fuzzy - finca':
+                    return {
+                pane: 'pane_HSasignados_3',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,0.8)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,0,241,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'fuzzy - nvia callejero':
+                    return {
+                pane: 'pane_HSasignados_3',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,0.8)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,255,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'fuzzy - vv':
+                    return {
+                pane: 'pane_HSasignados_3',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,0.8)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,255,30,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'match exacto - cc':
+                    return {
+                pane: 'pane_HSasignados_3',
+                shape: 'triangle',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,0.7490196078431373)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(1,255,26,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'match exacto - codvia callejero':
+                    return {
+                pane: 'pane_HSasignados_3',
+                shape: 'triangle',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,0.7490196078431373)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,255,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'match exacto - finca':
+                    return {
+                pane: 'pane_HSasignados_3',
+                shape: 'triangle',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,0.7490196078431373)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,0,241,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'match exacto - vv':
+                    return {
+                pane: 'pane_HSasignados_3',
+                shape: 'triangle',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,0.7490196078431373)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,255,30,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_HSasignados_3');
+        map.getPane('pane_HSasignados_3').style.zIndex = 403;
+        map.getPane('pane_HSasignados_3').style['mix-blend-mode'] = 'normal';
+        var layer_HSasignados_3 = new L.geoJson(json_HSasignados_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_HSasignados_3',
+            layerName: 'layer_HSasignados_3',
+            pane: 'pane_HSasignados_3',
+            onEachFeature: pop_HSasignados_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_HSasignados_3_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_HSasignados_3);
+        map.addLayer(layer_HSasignados_3);
+        const url = {"Nominatim": "https://nominatim.openstreetmap.org/search?format=geojson&addressdetails=1&",
+        "BAN": "https://api-adresse.data.gouv.fr/search/?"}
+        var photonControl = L.control.photon({
+            url: url["Nominatim"],
+            feedbackLabel: '',
+            position: 'topleft',
+            includePosition: true,
+            initial: true,
+            // resultsHandler: myHandler,
+        }).addTo(map);
+        photonControl._container.childNodes[0].style.borderRadius="10px"
+        // Create a variable to store the geoJSON data
+        var x = null;
+        // Create a variable to store the marker
+        var marker = null;
+        // Add an event listener to the Photon control to create a marker from the returned geoJSON data
+        var z = null;
+        photonControl.on('selected', function(e) {
+            console.log(photonControl.search.resultsContainer);
+            if (x != null) {
+                map.removeLayer(obj3.marker);
+                map.removeLayer(x);
+            }
+            obj2.gcd = e.choice;
+            x = L.geoJSON(obj2.gcd).addTo(map);
+            var label = typeof obj2.gcd.properties.label === 'undefined' ? obj2.gcd.properties.display_name : obj2.gcd.properties.label;
+            obj3.marker = L.marker(x.getLayers()[0].getLatLng()).bindPopup(label).addTo(map);
+            map.setView(x.getLayers()[0].getLatLng(), 17);
+            z = typeof e.choice.properties.label === 'undefined'? e.choice.properties.display_name : e.choice.properties.label;
+            console.log(e);
+            e.target.input.value = z;
+        });
+        var search = document.getElementsByClassName("leaflet-photon leaflet-control")[0];
+        search.classList.add("leaflet-control-search")
+        search.style.display = "flex";
+        search.style.backgroundColor="rgba(255,255,255,0.5)" 
+
+        // Créer le nouvel élément bouton
+        var button = document.createElement("div");
+        button.id = "gcd-button-control";
+        button.className = "gcd-gl-btn fa fa-search search-button";
+
+        // Ajouter le bouton à l'élément parent
+        search.insertBefore(button, search.firstChild);
+        last = search.lastChild;
+        last.style.display = "none";
+        button.addEventListener("click", function (e) {
+            if (last.style.display === "none") {
+                last.style.display = "block";
+            } else {
+                last.style.display = "none";
+            }
+        });
+        var overlaysTree = [
+        {label: '<b>MAPA WEB</b>',  selectAllCheckbox: true, children: [
+            {label: 'HS asignados<br /><table><tr><td style="text-align: center;"><img src="legend/HSasignados_3_fuzzycc0.png" /></td><td>fuzzy - cc</td></tr><tr><td style="text-align: center;"><img src="legend/HSasignados_3_fuzzyfinca1.png" /></td><td>fuzzy - finca</td></tr><tr><td style="text-align: center;"><img src="legend/HSasignados_3_fuzzynviacallejero2.png" /></td><td>fuzzy - nvia callejero</td></tr><tr><td style="text-align: center;"><img src="legend/HSasignados_3_fuzzyvv3.png" /></td><td>fuzzy - vv</td></tr><tr><td style="text-align: center;"><img src="legend/HSasignados_3_matchexactocc4.png" /></td><td>match exacto - cc</td></tr><tr><td style="text-align: center;"><img src="legend/HSasignados_3_matchexactocodviacallejero5.png" /></td><td>match exacto - codvia callejero</td></tr><tr><td style="text-align: center;"><img src="legend/HSasignados_3_matchexactofinca6.png" /></td><td>match exacto - finca</td></tr><tr><td style="text-align: center;"><img src="legend/HSasignados_3_matchexactovv7.png" /></td><td>match exacto - vv</td></tr></table>', layer: layer_HSasignados_3},
+            {label: '<img src="legend/Municipios_2.png" /> Municipios', layer: layer_Municipios_2},
+            {label: "OSM Standard", layer: layer_OSMStandard_1},
+            {label: "OrtoExpress Urbana 10-12.5 cm/pixel", layer: layer_OrtoExpressUrbana10125cmpixel_0},]},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"metodo-fuente": "str","asignaciones_qgis_nombre": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_metodofuente = document.createElement('div');
+            div_metodofuente.id = "div_metodofuente";
+            div_metodofuente.className= "filterselect";
+            document.getElementById("menu").appendChild(div_metodofuente);
+            sel_metodofuente = document.createElement('select');
+            sel_metodofuente.multiple = true;
+            sel_metodofuente.size = 9;
+            sel_metodofuente.id = "sel_metodofuente";
+            var metodofuente_options_str = "<option value='' unselected></option>";
+            sel_metodofuente.onchange = function(){filterFunc()};
+            metodofuente_options_str  += '<option value="NULL">NULL</option>';
+            metodofuente_options_str  += '<option value="fuzzy - cc">fuzzy - cc</option>';
+            metodofuente_options_str  += '<option value="fuzzy - finca">fuzzy - finca</option>';
+            metodofuente_options_str  += '<option value="fuzzy - nvia callejero">fuzzy - nvia callejero</option>';
+            metodofuente_options_str  += '<option value="fuzzy - vv">fuzzy - vv</option>';
+            metodofuente_options_str  += '<option value="match exacto - cc">match exacto - cc</option>';
+            metodofuente_options_str  += '<option value="match exacto - codvia callejero">match exacto - codvia callejero</option>';
+            metodofuente_options_str  += '<option value="match exacto - finca">match exacto - finca</option>';
+            metodofuente_options_str  += '<option value="match exacto - vv">match exacto - vv</option>';
+            sel_metodofuente.innerHTML = metodofuente_options_str;
+            div_metodofuente.appendChild(sel_metodofuente);
+            var lab_metodofuente = document.createElement('div');
+            lab_metodofuente.innerHTML = 'metodo-fuente';
+            lab_metodofuente.className = 'filterlabel';
+            div_metodofuente.appendChild(lab_metodofuente);
+            var reset_metodofuente = document.createElement('div');
+            reset_metodofuente.innerHTML = 'clear filter';
+            reset_metodofuente.className = 'filterlabel';
+            reset_metodofuente.onclick = function() {
+                var options = document.getElementById("sel_metodofuente").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_metodofuente.appendChild(reset_metodofuente);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_asignaciones_qgis_nombre = document.createElement('div');
+            div_asignaciones_qgis_nombre.id = "div_asignaciones_qgis_nombre";
+            div_asignaciones_qgis_nombre.className= "filterselect";
+            document.getElementById("menu").appendChild(div_asignaciones_qgis_nombre);
+            sel_asignaciones_qgis_nombre = document.createElement('select');
+            sel_asignaciones_qgis_nombre.multiple = true;
+            sel_asignaciones_qgis_nombre.size = 10;
+            sel_asignaciones_qgis_nombre.id = "sel_asignaciones_qgis_nombre";
+            var asignaciones_qgis_nombre_options_str = "<option value='' unselected></option>";
+            sel_asignaciones_qgis_nombre.onchange = function(){filterFunc()};
+            asignaciones_qgis_nombre_options_str  += '<option value="Arafo">Arafo</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Arico">Arico</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Buenavista del Norte">Buenavista del Norte</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Fasnia">Fasnia</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Garachico">Garachico</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Guancha, La">Guancha, La</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Matanza de Acentejo, La">Matanza de Acentejo, La</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Rosario, El">Rosario, El</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="San Juan de la Rambla">San Juan de la Rambla</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Santa Úrsula">Santa Úrsula</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Santiago del Teide">Santiago del Teide</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Sauzal, El">Sauzal, El</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Silos, Los">Silos, Los</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Tanque, El">Tanque, El</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Tegueste">Tegueste</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Victoria de Acentejo, La">Victoria de Acentejo, La</option>';
+            asignaciones_qgis_nombre_options_str  += '<option value="Vilaflor de Chasna">Vilaflor de Chasna</option>';
+            sel_asignaciones_qgis_nombre.innerHTML = asignaciones_qgis_nombre_options_str;
+            div_asignaciones_qgis_nombre.appendChild(sel_asignaciones_qgis_nombre);
+            var lab_asignaciones_qgis_nombre = document.createElement('div');
+            lab_asignaciones_qgis_nombre.innerHTML = 'asignaciones_qgis_nombre';
+            lab_asignaciones_qgis_nombre.className = 'filterlabel';
+            div_asignaciones_qgis_nombre.appendChild(lab_asignaciones_qgis_nombre);
+            var reset_asignaciones_qgis_nombre = document.createElement('div');
+            reset_asignaciones_qgis_nombre.innerHTML = 'clear filter';
+            reset_asignaciones_qgis_nombre.className = 'filterlabel';
+            reset_asignaciones_qgis_nombre.onclick = function() {
+                var options = document.getElementById("sel_asignaciones_qgis_nombre").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_asignaciones_qgis_nombre.appendChild(reset_asignaciones_qgis_nombre);
+        resetLabels([layer_HSasignados_3]);
+        map.on("zoomend", function(){
+            resetLabels([layer_HSasignados_3]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_HSasignados_3]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_HSasignados_3]);
+        });
+        </script>
+    </body>
+</html>
